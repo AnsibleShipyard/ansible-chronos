@@ -1,0 +1,30 @@
+---
+
+# == base ==
+version: "0.1.0"
+
+# == source ==
+app_name: "chronos"
+source_dir: "/tmp/{{app_name}}"
+
+source_repo: "https://github.com/airbnb/chronos.git"
+chronos_version: "2.1.0"
+# version: is skipped as we always go directly to source
+cleanup: true
+
+# == install ==
+install_location: "/opt/{{app_name}}"
+
+
+install_jar: "{{install_location}}/{{app_name}}.jar"
+target_jar_name: "{{chronos_version}}-jar-with-dependencies.jar"
+target_jar_location: "{{source_dir}}/target"
+
+# # == chronos conf ==
+runtime_memory_options: "-Xmx512m"
+runtime_lib_path: "/usr/local/lib"
+runtime_chronos_jar: "/opt/chronos/chronos.jar"
+runtime_zookeeper_hosts: "localhost:2181"
+runtime_master: "zk://localhost:2181/mesos"
+http_port: "8081"
+https_port: "8443"

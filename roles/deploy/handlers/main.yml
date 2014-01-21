@@ -1,0 +1,3 @@
+---
+- name: restart chronos
+  service: name=chronos state=restarted

@@ -1,0 +1,32 @@
+---
+
+# == Compile ==
+- name: Delete {{source_dir}}
+  file: path={{source_dir}} state=absent
+
+- name: Clone repo
+  git: repo={{source_repo}}
+    dest={{source_dir}}
+    version={{chronos_version}}
+
+- name: Maven Clean
+  command: mvn clean chdir={{source_dir}}
+
+- name: Maven Compile
+  command: mvn compile chdir={{source_dir}}
+
+- name: Maven Package
+  command: mvn package chdir={{source_dir}}
+
+- name: Copy {{target_jar_location}} chronos to {{install_jar}}
+  shell: mv {{target_jar_location}}/{{app_name}}-{{chronos_version}}_mesos*.jar {{install_jar}}
+
+# == Install ==
+- name: Set permissions on {{install_jar}}
+  file: path={{install_jar}} 
+    state=file
+    force=yes
+    owner=root
+    group=root
+    mode=0655
+  notify: restart chronos
