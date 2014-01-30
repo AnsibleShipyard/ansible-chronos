@@ -11,13 +11,14 @@ respawn limit 10 5
 
 # Custom local
 script
+  [ ! -f /etc/default/chronos ]    || . /etc/default/chronos
   exec java \
-    {{ chronos_runtime_memory_options }} \
-    -Djava.library.path={{ chronos_runtime_lib_path }} \
-    -cp {{ chronos_runtime_chronos_jar }} com.airbnb.scheduler.Main \
-    --zk_hosts {{ chronos_runtime_zookeeper_hosts }} \
-    --master {{ chronos_runtime_master }} \
-    --http_port {{ chronos_http_port }} \
-    --https_port {{ chronos_https_port }}
-
+    ${MEM_OPTS:+$MEM_OPTS} \
+    ${LIB_PATH:+-Djava.library.path=$LIB_PATH} \
+    ${CHRONOS_JAR:+-cp $CHRONOS_JAR com.airbnb.scheduler.Main} \
+    ${ZK_HOSTS:+--zk_hosts "$ZK_HOSTS"} \
+    ${MASTER:+--master $MASTER} \
+    ${HTTP_PORT:+--http_port $HTTP_PORT} \
+    ${HTTPS_PORT:+--https_port $HTTPS_PORT} \
+    ${OPTS:+$OPTS}
 end script
