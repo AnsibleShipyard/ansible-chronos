@@ -18,11 +18,11 @@
   command: mvn package chdir={{chronos_source_dir}}
 
 - name: Copy {{chronos_target_jar_location}} chronos to {{chronos_install_jar}}
-  shell: mv {{chronos_target_jar_location}}/{{chronos_app_name}}-{{chronos_version}}_mesos*.jar {{chronos_install_jar}}
+  shell: mv {{chronos_target_jar_location}}/{{chronos_app_name}}-{{chronos_version}}.jar {{chronos_install_jar}}
 
 # == Install ==
 - name: Set permissions on {{chronos_install_jar}}
-  file: path={{chronos_install_jar}} 
+  file: path={{chronos_install_jar}}
     state=file
     force=yes
     owner=root
