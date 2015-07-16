@@ -15,7 +15,7 @@ script
   exec java \
     ${MEM_OPTS:+$MEM_OPTS} \
     ${LIB_PATH:+-Djava.library.path=$LIB_PATH} \
-    ${CHRONOS_JAR:+-cp $CHRONOS_JAR com.airbnb.scheduler.Main} \
+    ${CHRONOS_JAR:+-cp $CHRONOS_JAR org.apache.mesos.chronos.scheduler.Main} \
     ${ZK_HOSTS:+--zk_hosts "$ZK_HOSTS"} \
     ${MASTER:+--master $MASTER} \
     ${HTTP_PORT:+--http_port $HTTP_PORT} \
