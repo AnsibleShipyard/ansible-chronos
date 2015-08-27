@@ -1,0 +1,20 @@
+---
+chronos_playbook_version: "0.2.0"
+
+chronos_app_name: "chronos" # see Aurora
+chronos_version: "2.3.4"
+
+# # == chronos conf ==
+mesos_zookeeper_path: "/mesos"
+chronos_runtime_memory_options: "-Xmx512m"
+chronos_hostname: "{{ inventory_hostname }}"
+#chronos_runtime_lib_path: "/usr/local/lib"
+chronos_runtime_lib_path: ""
+chronos_runtime_zookeeper_hosts: "localhost:2181"
+chronos_runtime_master: "zk://{{ chronos_runtime_zookeeper_hosts }}{{ mesos_zookeeper_path }}"
+chronos_zk_connect: "zk://{{ chronos_runtime_zookeeper_hosts }}/{{chronos_app_name}}"
+
+chronos_http_port: "8081"
+#chronos_https_port: "8443"
+chronos_https_port: ""
+haproxy_script_location: "/usr/local/bin"

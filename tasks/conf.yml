@@ -1,0 +1,44 @@
+---
+
+- name: create chronos conf directory
+  sudo: yes
+  file:
+    dest: /etc/chronos/conf
+    state: directory
+  tags:
+    - chronos
+
+- name: set key/value options
+  sudo: yes
+  when: item.value != ""
+  copy:
+    dest: /etc/chronos/conf/{{ item.key }}
+    content: "{{ item.value }}"
+  with_items:
+    - key: zk_hosts
+      value: "{{ chronos_zk_connect }}"
+    #- key: master
+    #  value: "{{ chronos_runtime_master }}"
+    - key: hostname
+      value: "{{ chronos_hostname }}"
+    - key: http_port
+      value: "{{ chronos_http_port }}"
+    #- key: mem_opts
+    #  value: "{{ chronos_runtime_memory_options }}"
+    - key: mesos_framework_name
+      value: "chronos"
+  notify:
+    - restart chronos
+  tags:
+    - chronos
+
+- name: enable and start chronos
+  sudo: yes
+  service:
+    enabled: yes
+    name: chronos
+    state: started
+  tags:
+    - chronos
+
+- meta: flush_handlers
