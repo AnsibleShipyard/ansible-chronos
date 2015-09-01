@@ -3,7 +3,25 @@
   apt_key: id=E56151BF keyserver=keyserver.ubuntu.com state=present
 
 - name: Add Mesosphere repo
-  apt_repository: repo="{{ chronos_apt_repo }}" state=present
+  apt_repository: "repo={{ chronos_apt_repo }} state=present"
 
 - name: Install Chronos package
-  apt: pkg=chronos={{chronos_version}}-1.* state=present update_cache=yes
+  apt: "pkg=chronos={{chronos_version}}-2.* state=present update_cache=yes cache_valid_time=3600"
+  register: chronos_2
+  ignore_errors: yes
+
+- name: Install Chronos package
+  apt: "pkg=chronos={{chronos_version}}-1.* state=present update_cache=yes cache_valid_time=3600"
+  register: chronos_1
+  ignore_errors: yes
+  when: chronos_2 | failed
+
+- name: Install Chronos package
+  apt: "pkg=chronos={{chronos_version}}-0.* state=present update_cache=yes cache_valid_time=3600"
+  register: chronos_0
+  ignore_errors: yes
+  when: chronos_1 | failed
+
+- name: Check for sucessfull installation
+  fail: msg="Chronos installation failed"
+  when: not ( chronos_2|success or chronos_1|success or chronos_0|success)
