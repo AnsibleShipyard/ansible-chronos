@@ -3,7 +3,7 @@
   apt_key: id=E56151BF keyserver=keyserver.ubuntu.com state=present
 
 - name: Add Mesosphere repo
-  apt_repository: "repo={{ chronos_apt_repo }} state=present"
+  apt_repository: repo="{{ chronos_apt_repo }}" state=present
 
 - name: Install Chronos package
   apt: "pkg=chronos={{chronos_version}}-2.* state=present update_cache=yes cache_valid_time=3600"
