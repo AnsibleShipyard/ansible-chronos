@@ -12,5 +12,8 @@
 - include: haproxy.yml
   when: haproxy_script_location != ""
 
+- name: Delete old slave info to ensure clean startup of Chronos after an upgrade
+  file: path=/tmp/mesos/meta/slaves/latest state=absent
+
 - name: Start Chronos service
   service: name=chronos state=restarted enabled=yes
