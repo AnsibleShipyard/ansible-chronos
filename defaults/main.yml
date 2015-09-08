@@ -1,20 +1,19 @@
 ---
-chronos_playbook_version: "0.2.0"
-
-chronos_app_name: "chronos" # see Aurora
-chronos_version: "2.3.4"
+chronos_version: 2.3.4
 
 # # == chronos conf ==
-mesos_zookeeper_path: "/mesos"
-chronos_runtime_memory_options: "-Xmx512m"
-chronos_hostname: "{{ inventory_hostname }}"
-#chronos_runtime_lib_path: "/usr/local/lib"
-chronos_runtime_lib_path: ""
-chronos_runtime_zookeeper_hosts: "localhost:2181"
-chronos_runtime_master: "zk://{{ chronos_runtime_zookeeper_hosts }}{{ mesos_zookeeper_path }}"
-chronos_zk_connect: "zk://{{ chronos_runtime_zookeeper_hosts }}/{{chronos_app_name}}"
+mesos_zk_chroot: "mesos"
+chronos_zk_auth: ""
+chronos_zk_dns: "{{ inventory_hostname }}"
+chronos_zk_port: 2181
+chronos_zk_chroot: chronos
+chronos_zk_connect: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{chronos_zk_chroot}}"
 
-chronos_http_port: "8081"
-#chronos_https_port: "8443"
-chronos_https_port: ""
+chronos_zk_mesos_master: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{ mesos_zk_chroot }}"
+
+chronos_hostname: "{{ inventory_hostname }}"
+chronos_port: 4400
+
+# TODO chronos_env_java_opts: "-Xmx512m"
+
 haproxy_script_location: "/usr/local/bin"
