@@ -1,8 +1,15 @@
 ---
-- name: Create Chronos default conf file
-  template: src=chronos_conf.j2 dest=/etc/default/chronos
-    owner="root" group="root" mode=0664
+- name: Add apt-key
+  apt_key: id=E56151BF keyserver=keyserver.ubuntu.com state=present
 
-- name: Create Chronos default init file
-  template: src=chronos.j2 dest=/etc/init/chronos.conf
-    owner="root" group="root" mode=0664
+- name: Add Mesosphere repo
+  apt_repository:
+    repo: "{{ chronos_apt_repo }}"
+    state: present
+
+- name: Install Chronos package
+  apt: 
+    pkg: chronos={{chronos_version}}-{{chronos_package_version}}.{{ansible_distribution|lower}}{{ansible_distribution_version.split('.')|join('')}}
+    state: present
+    update_cache: yes
+    cache_valid_time: 600

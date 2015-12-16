@@ -1,0 +1,20 @@
+---
+chronos_version: 2.4.0
+chronos_package_version: 0.1.20150828104228
+
+# # == chronos conf ==
+mesos_zk_chroot: "mesos"
+chronos_zk_auth: ""
+chronos_zk_dns: "{{ inventory_hostname }}"
+chronos_zk_port: 2181
+chronos_zk_chroot: chronos
+chronos_zk_connect: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{chronos_zk_chroot}}"
+
+chronos_zk_mesos_master: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{ mesos_zk_chroot }}"
+
+chronos_hostname: "{{ inventory_hostname }}"
+chronos_port: 4400
+
+# TODO chronos_env_java_opts: "-Xmx512m"
+
+haproxy_script_location: "/usr/local/bin"
