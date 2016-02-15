@@ -1,0 +1,64 @@
+---
+- include: remove.yml
+
+- name: Test Playbook - Defaults
+  hosts: localhost
+  connection: local
+  sudo: yes
+  roles:
+    - { role: ../../ }
+  post_tasks:
+    - include: verify.yml
+- include: remove.yml
+
+
+- name: Test Playbook - No bin override
+  hosts: localhost
+  connection: local
+  sudo: yes
+  vars:
+    chronos_bin_load_options_override_enabled: yes
+    chronos_conf_options:
+      hostname: "{{ chronos_hostname }}"
+      http_port: "{{ chronos_port }}"
+      mesos_framework_name: "chronos"
+  roles:
+    - { role: ../../ }
+  post_tasks:
+    - include: verify.yml
+- include: remove.yml
+
+
+- name: Test Playbook - No Mesos Requirement
+  hosts: localhost
+  connection: local
+  sudo: yes
+  vars:
+    chronos_systemd_require_mesos: no
+  roles:
+    - { role: ../../ }
+  post_tasks:
+    - include: verify.yml
+- include: remove.yml
+
+
+- name: Test Playbook - Wait for Zookeeper
+  hosts: localhost
+  connection: local
+  sudo: yes
+  vars:
+    chronos_systemd_unit_startpre:
+      - "while true; do
+          [[ $(echo ruok | nc '{{ chronos_zk_dns }}' {{ chronos_zk_port }} 2>/dev/null) == 'imok' ]] && exit 0 || sleep 1;
+          [[ $SECONDS -ge 60 ]] && exit 1;
+        done
+        "
+  pre_tasks:
+    - name: Install netcat
+      yum: name=nc state=present
+      when: ansible_pkg_mgr == 'yum'
+  roles:
+    - { role: ../../ }
+  post_tasks:
+    - include: verify.yml
+
