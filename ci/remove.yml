@@ -1,0 +1,24 @@
+---
+
+- name: Remove Chronos
+  hosts: localhost
+  connection: local
+  sudo: yes
+
+  tasks:
+    - service: name=chronos state=stopped enabled=no
+      ignore_errors: yes
+
+    - yum: name=chronos,mesosphere-el-repo state=absent
+      when: ansible_pkg_mgr == 'yum'
+
+    - apt: pkg=chronos=* state=absent
+      when: ansible_pkg_mgr == 'apt'
+
+    - file: path={{ item }} state=absent
+      with_items:
+        - /usr/bin/chronos
+        - /usr/lib/systemd/system/chronos.service
+        - /etc/chronos/conf
+        - /etc/chronos
+        - /usr/local/bin/haproxy_dns_cfg

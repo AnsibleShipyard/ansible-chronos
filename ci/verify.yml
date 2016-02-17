@@ -1,0 +1,22 @@
+---
+
+- name: Test for Chronos service
+  shell: test -f /bin/systemctl && /bin/systemctl status chronos.service || service chronos status || status chronos
+  register: chronos_service
+  failed_when: "chronos_service.rc != 0 or ('Active: active (running)' not in chronos_service.stdout and 'start/running' not in chronos_service.stdout)"
+
+- name: Wait for Chronos to be ready
+  wait_for:
+    host: "{{ chronos_bind_address }}"
+    port: "{{ chronos_port }}"
+    state: started
+  delay: 3
+  retries: 5
+
+- name: Test for Chronos endpoint
+  uri:
+    # https://github.com/mesosphere/chaos#built-in-endpoints
+    url: "http://{{ chronos_bind_address }}:{{ chronos_port }}/ping"
+    return_content: yes
+  register: chronos_ping
+  failed_when: chronos_ping.status != 200 or 'pong' not in chronos_ping.content

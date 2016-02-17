@@ -3,4 +3,4 @@
   yum: name={{ mesosphere_repo }} state=present
 
 - name: Install Chronos
-  yum: name=chronos-{{chronos_version}} state=present
+  yum: name={{ chronos_yum_package_name }} state=present

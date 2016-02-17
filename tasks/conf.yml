@@ -1,22 +1,9 @@
 ---
 
-#- name: wait for zookeeper to listen
-#  command: "/usr/local/bin/zookeeper-wait-for-listen.sh {{ inventory_hostname }}"
-#
-#- name: create zookeeper acl
-#  sudo: yes
-#  command: "{{ chronos_zk_acl_cmd }}"
-#  notify:
-#    - restart chronos
-#  when: zk_chronos_user_secret is defined
-#  run_once: true
-#  tags:
-#    - chronos
-
 - name: create chronos conf directory
   sudo: yes
   file:
-    dest: /etc/chronos/conf
+    dest: "{{ chronos_conf_path }}"
     state: directory
   tags:
     - chronos
@@ -25,76 +12,78 @@
   stat: path=/usr/lib/systemd/system/
   register: systemd_check
 
-- name: configure chronos unit file
+- name: (systemd) configure chronos unit file - requires
   sudo: yes
   replace:
-    dest: /usr/lib/systemd/system/chronos.service
-    regexp: "=network.target"
-    replace: '=mesos-master.service'
-  when: systemd_check.stat.exists == true
+    dest: "{{ chronos_systemd_unit }}"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - regexp: '^After=((?!mesos-master.service).*)$'
+      replace: 'After=mesos-master.service \1'
+    - regexp: '^Wants=((?!mesos-master.service).*)$'
+      replace: 'Wants=mesos-master.service \1'
+  when: systemd_check.stat.exists == true and chronos_systemd_require_mesos
   notify:
-    - reload chronos
     - restart chronos
   tags:
     - chronos
 
-- name: configure chronos to wait for zookeeper before starting
+- name: (systemd) configure chronos unit file - pre start
   sudo: yes
   lineinfile:
-    dest: /usr/lib/systemd/system/chronos.service
-    line: "ExecStartPre=/usr/local/bin/zookeeper-wait-for-listen.sh {{ chronos_zk_dns }}"
+    dest: "{{ chronos_systemd_unit }}"
+    line: "ExecStartPre={{ item }}"
     insertbefore: "^ExecStart="
     state: present
+  with_items: chronos_systemd_unit_startpre
   when: systemd_check.stat.exists == true
   notify:
-    - reload chronos
     - restart chronos
   tags:
     - chronos
 
 # TODO: feels like a hack
 - name: fix chronos bin file
-  sudo: yes
   replace:
     dest: /usr/bin/chronos
-    regexp: '\[\[ -s /etc/mesos/zk \]\]'
-    replace: 'false'
+    regexp: 'function load_options_and_log(.*\s(?!function))*'
+    replace: "{{ chronos_bin_load_options_override }}\n"
+  when: chronos_bin_load_options_override_enabled
+  sudo: yes
   notify:
     - restart chronos
   tags:
     - chronos
 
 - name: set key/value options
-  sudo: yes
-  when: item.value != ""
   copy:
-    dest: /etc/chronos/conf/{{ item.key }}
+    dest: "{{ chronos_conf_path }}/{{ item.key }}"
     content: "{{ item.value }}"
-  with_items:
-    - key: zk_hosts
-      value: "{{ chronos_zk_connect }}"
-    - key: master
-      value: "{{ chronos_zk_mesos_master }}"
-    - key: hostname
-      value: "{{ chronos_hostname }}"
-    - key: http_port
-      value: "{{ chronos_port }}"
-    #- key: mem_opts
-    #  value: "{{ chronos_env_java_opts }}"
-    - key: mesos_framework_name
-      value: "chronos"
+  with_dict: chronos_conf_options
+  when: item.value != ""
+  sudo: yes
   notify:
     - restart chronos
   tags:
     - chronos
 
-- name: enable and start chronos
+- name: set sysconfig variable
+  lineinfile:
+    dest: "{{ chronos_sysconfig_path }}"
+    line: "{{ item.key }}={{ item.value }}"
+    create: yes
+  with_dict: chronos_sysconfig_vars
+  when: item.value != ""
+  sudo: yes
+  notify:
+    - restart chronos
+
+- name: enable chronos service
   sudo: yes
   service:
     enabled: yes
     name: chronos
-    state: started
   tags:
     - chronos
 
-- meta: flush_handlers

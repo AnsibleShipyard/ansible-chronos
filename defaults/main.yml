@@ -2,19 +2,101 @@
 chronos_version: 2.4.0
 chronos_package_version: 0.1.20150828104228
 
+# RedHat
+chronos_yum_package_name: "chronos-{{ chronos_version }}"
+
 # # == chronos conf ==
+chronos_conf_path: /etc/chronos/conf
+chronos_sysconfig_path: /etc/sysconfig/chronos
+chronos_systemd_unit: /usr/lib/systemd/system/chronos.service
+
+# Control whether systemd service unit requires mesos-master service unit.
+chronos_systemd_require_mesos: yes
+
+# List of command or script that must be run before service unit is started.
+chronos_systemd_unit_startpre: []
+# Examples:
+#  - "/usr/local/bin/zookeeper-wait-for-listen.sh {{ chronos_zk_dns }}"
+#
+## or inline script
+#  - "while true; do
+#       [[ $(echo ruok | nc '{{ chronos_zk_dns }}' {{ chronos_zk_port }} 2>/dev/null) == 'imok' ]] && exit 0 || sleep 1;
+#       [[ $SECONDS -ge 60 ]] && exit 1;
+#     done
+#     "
+
+# Control whether we fix '/usr/bin/chronos' file.
+# By default the bin script load config from '/etc/mesos/zk', which is no always
+# desired if you want to supply your own value. Setting this to 'yes' will replace the
+# function 'load_options_and_log' in it with function below.
+# If you set this to 'no', you should override 'chronos_conf_options' variables,
+# remove both 'zk_hosts' and 'master' variables otherwise Chronos will complain about
+# duplicate values for the same argument.
+# Upcoming fix: https://github.com/mesosphere/chronos-pkg/pull/19
+chronos_bin_load_options_override_enabled: yes
+chronos_bin_load_options_override: |
+  function load_options_and_log {
+    set -x
+    # Load Chronos options from Mesos and Chronos conf files that are present.
+    # Launch main program with Syslog enabled.
+    local cmd=( run_jar )
+    # Load custom options
+    if [[ -d $conf_dir ]]
+    then
+      while read -u 9 -r -d '' path
+      do
+        local name="${path#./}"
+        if ! element_in "--${name#'?'}" "$@"
+        then
+          case "$name" in
+            '?'*) cmd+=( "--${name#'?'}" ) ;;
+            *)    cmd+=( "--$name" "$(< "$conf_dir/$name")" ) ;;
+          esac
+        fi
+      done 9< <(cd "$conf_dir" && find . -type f -not -name '.*' -print0)
+    fi
+    # Default zk and master options, if not already specified
+    if [[ -s /etc/mesos/zk ]]
+    then
+      if ! element_in "--zk_hosts" "${cmd[@]}"
+      then
+        cmd+=( --zk_hosts "$(cut -d / -f 3 /etc/mesos/zk)" )
+      fi
+      if ! element_in "--master" "${cmd[@]}"
+      then
+        cmd+=( --master "$(cat /etc/mesos/zk)" )
+      fi
+    fi
+    logged chronos "${cmd[@]}" "$@"
+  }
+
+
 mesos_zk_chroot: "mesos"
 chronos_zk_auth: ""
 chronos_zk_dns: "{{ inventory_hostname }}"
 chronos_zk_port: 2181
 chronos_zk_chroot: chronos
 chronos_zk_connect: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{chronos_zk_chroot}}"
-
 chronos_zk_mesos_master: "zk://{{ chronos_zk_dns }}:{{ chronos_zk_port }}/{{ mesos_zk_chroot }}"
 
 chronos_hostname: "{{ inventory_hostname }}"
+chronos_bind_address: "{{ ansible_default_ipv4.address }}"
 chronos_port: 4400
 
-# TODO chronos_env_java_opts: "-Xmx512m"
+# Dictionary of configuration options for Chronos
+chronos_conf_options:
+  zk_hosts: "{{ chronos_zk_connect }}"
+  master: "{{ chronos_zk_mesos_master }}"
+  hostname: "{{ chronos_hostname }}"
+  http_port: "{{ chronos_port }}"
+  #mem_opts: "{{ chronos_env_java_opts }}"
+  mesos_framework_name: "chronos"
 
-haproxy_script_location: "/usr/local/bin"
+# TODO chronos_env_java_opts: "-Xmx512m"
+chronos_sysconfig_vars:
+  LIBPROCESS_IP: "{{ chronos_bind_address }}"
+
+# Location where HAProxy scripts are installed, e.g. "/usr/local/bin"
+haproxy_script_location: ''
+
+mesosphere_repo: "http://repos.mesosphere.com/el/{{ os_version_major }}/noarch/RPMS/{{ mesosphere_releases[os_version_major] }}"

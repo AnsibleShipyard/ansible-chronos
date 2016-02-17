@@ -1,9 +1,19 @@
 os_version: "{{ ansible_lsb.release if ansible_lsb is defined else ansible_distribution_version }}"
-os_version_major: "{{ os_version | regex_replace('^([0-9]+)[^0-9]*.*', '\\\\1') }}"
+os_version_major: "
+  {%- if ansible_distribution == 'Amazon' -%}
+    {{- 6 if '2014' in os_version or ('2015' in os_version and os_version[os_version.index('.'):] | int <= 3) else 7 -}}
+  {%- else -%}
+    {%- if ansible_distribution_major_version is defined -%}
+      {{- ansible_distribution_major_version -}}
+    {%- elif '.' in os_version %}
+      {{- os_version[:os_version.index('.')] -}}
+    {%- else -%}
+      {{- os_version -}}
+    {%- endif -%}
+  {%- endif -%}
+  "
 
 mesosphere_releases:
   '6': 'mesosphere-el-repo-6-3.noarch.rpm'
-  '7': 'mesosphere-el-repo-7-1.noarch.rpm'
-
-mesosphere_repo: "http://repos.mesosphere.com/el/{{ os_version_major }}/noarch/RPMS/{{ mesosphere_releases[os_version_major] }}"
+  '7': 'mesosphere-el-repo-7-3.noarch.rpm'
 
