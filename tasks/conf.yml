@@ -60,7 +60,7 @@
   copy:
     dest: "{{ chronos_conf_path }}/{{ item.key }}"
     content: "{{ item.value }}"
-  with_dict: chronos_conf_options
+  with_dict: "{{ chronos_conf_options }}"
   when: item.value != ""
   sudo: yes
   notify:
@@ -73,7 +73,7 @@
     dest: "{{ chronos_sysconfig_path }}"
     line: "{{ item.key }}={{ item.value }}"
     create: yes
-  with_dict: chronos_sysconfig_vars
+  with_dict: "{{ chronos_sysconfig_vars }}"
   when: item.value != ""
   sudo: yes
   notify:
